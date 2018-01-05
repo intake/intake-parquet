@@ -1,6 +1,3 @@
-from functools import partial
-from glob import glob
-
 from dask.delayed import delayed
 import dask.dataframe as dd
 
@@ -19,47 +16,41 @@ class Plugin(base.Plugin):
 
     def open(self, urlpath, **kwargs):
         base_kwargs, source_kwargs = self.separate_base_kwargs(kwargs)
-        return ParquetSource(urlpath=urlpath, pcap_kwargs=source_kwargs,
-                                 metadata=base_kwargs['metadata'])
+        return ParquetSource(urlpath=urlpath, parquet_kwargs=source_kwargs,
+                             metadata=base_kwargs['metadata'])
 
 
 class ParquetSource(base.DataSource):
-    def __init__(self, urlpath, kwargs, metadata):
-        self._init_args = dict(kwargs=kwargs, metadata=metadata)
-
-        self._kwargs = kwargs
+    def __init__(self, urlpath, parquet_kwargs, metadata):
+        self._urlpath = urlpath
+        self._csv_kwargs = parquet_kwargs
         self._dataframe = None
 
-        super(self.__class__, self).__init__(
-            container='dataframe', metadata=metadata)
+        super(ParquetSource, self).__init__(container='dataframe',
+                                            metadata=metadata)
 
-    def _get_dataframe(self):
-        return self._dataframe
+    def _get_schema(self):
+        if self._pf is None:
+            self._pf = fp.ParquetFile(self.urlpath)
+        pf = self._pf
 
-    def discover(self):
-        self._get_dataframe()
+        return base.Schema(datashape=None,
+                           dtype=pf.dtypes,
+                           shape=(len(pf.columns), pf.count),
+                           npartitions=len(pf.rgs),
+                           extra_metadata=pf.key_value_metadata)
 
-    def read(self):
-        return self._get_dataframe().compute()
+    def _get_partition(self, i):
+        pf = self._pf
+        index = pf._get_index(None)
+        columns = pf.columns
+        if index and index not in columns:
+            columns.append(index)
+        rg = pf.row_groups[i]
+        df, views = self.pre_allocate(rg.num_rows, columns,
+                                      None, index)
+        return pf.read_row_group_file(rg, columns, None, index,
+                                      assign=views)
 
-    def read_chunked(self):
-        df = self._get_dataframe()
-
-        for i in range(df.npartitions):
-            yield df.get_partition(i).compute()
-
-    def read_partition(self, i):
-        df = self._get_dataframe()
-        return df.get_partition(i).compute()
-
-    def to_dask(self):
-        return self._get_dataframe()
-
-    def close(self):
+    def _close(self):
         self._dataframe = None
-
-    def __getstate__(self):
-        return self._init_args
-
-    def __setstate__(self, state):
-        self.__init__(**state)
