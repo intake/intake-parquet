@@ -1,9 +1,5 @@
-from dask.delayed import delayed
-import dask.dataframe as dd
-
-from intake.source import base
-
 import fastparquet as fp
+from intake.source import base
 
 __version__ = '0.0.1'
 
@@ -21,23 +17,23 @@ class Plugin(base.Plugin):
 
 
 class ParquetSource(base.DataSource):
-    def __init__(self, urlpath, parquet_kwargs, metadata):
+    def __init__(self, urlpath, parquet_kwargs=None, metadata=None):
         self._urlpath = urlpath
-        self._csv_kwargs = parquet_kwargs
-        self._dataframe = None
+        self._csv_kwargs = parquet_kwargs or {}
+        self._pf = None
 
         super(ParquetSource, self).__init__(container='dataframe',
                                             metadata=metadata)
 
     def _get_schema(self):
         if self._pf is None:
-            self._pf = fp.ParquetFile(self.urlpath)
+            self._pf = fp.ParquetFile(self._urlpath)
         pf = self._pf
 
         return base.Schema(datashape=None,
                            dtype=pf.dtypes,
                            shape=(len(pf.columns), pf.count),
-                           npartitions=len(pf.rgs),
+                           npartitions=len(pf.row_groups),
                            extra_metadata=pf.key_value_metadata)
 
     def _get_partition(self, i):
@@ -47,10 +43,9 @@ class ParquetSource(base.DataSource):
         if index and index not in columns:
             columns.append(index)
         rg = pf.row_groups[i]
-        df, views = self.pre_allocate(rg.num_rows, columns,
-                                      None, index)
-        return pf.read_row_group_file(rg, columns, None, index,
-                                      assign=views)
+        df, views = pf.pre_allocate(rg.num_rows, columns, None, index)
+        pf.read_row_group_file(rg, columns, None, index, assign=views)
+        return df
 
     def _close(self):
-        self._dataframe = None
+        self._pf = None
