@@ -1,0 +1,38 @@
+package:
+  name: intake-fastparquet
+  version: 0.0.1
+
+source:
+  path: ..
+
+build:
+  number: 0
+  script:
+    - python setup.py install --single-version-externally-managed --record=record.txt
+
+requirements:
+  build:
+    - python
+    - jinja2
+  run:
+    - intake
+    - python
+    - pandas
+    - dask
+    - fastparquet
+
+test:
+  source_files:
+    - tests
+  requires:
+    - pytest
+    - pytest-cov
+    - coverage
+  commands:
+    - py.test --verbose --cov=intake_pcap tests
+
+about:
+  home: https://github.com/ContinuumIO/intake-fastparquet
+  license: BSD
+  license_file: LICENSE
+  summary: Intake fastparquet plugin

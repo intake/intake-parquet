@@ -1,0 +1,8 @@
+plugins:
+  source:
+    - module: intake_fastparquet
+sources:
+  ping:
+    driver: fastparquet
+    args:
+      urlpath: !template '{{ CATALOG_DIR }}/afile.parq'
