@@ -14,16 +14,16 @@ __version__ = '0.0.1'
 class Plugin(base.Plugin):
     def __init__(self):
         super(Plugin, self).__init__(
-            name='fastparquet', version=__version__, container='dataframe',
+            name='parquet', version=__version__, container='dataframe',
             partition_access=True)
 
     def open(self, urlpath, **kwargs):
         base_kwargs, source_kwargs = self.separate_base_kwargs(kwargs)
-        return FastparquetSource(urlpath=urlpath, pcap_kwargs=source_kwargs,
+        return ParquetSource(urlpath=urlpath, pcap_kwargs=source_kwargs,
                                  metadata=base_kwargs['metadata'])
 
 
-class FastparquetSource(base.DataSource):
+class ParquetSource(base.DataSource):
     def __init__(self, urlpath, kwargs, metadata):
         self._init_args = dict(kwargs=kwargs, metadata=metadata)
 

@@ -6,10 +6,10 @@ from setuptools import setup, find_packages
 requires = open('requirements.txt').read().strip().split('\n')
 
 setup(
-    name='intake-fastparquet',
+    name='intake-parquet',
     version='0.0.1',
-    description='Intake fastparquet plugin',
-    url='https://github.com/ContinuumIO/intake-fastparquet',
+    description='Intake parquet plugin',
+    url='https://github.com/ContinuumIO/intake-parquet',
     maintainer='Martin Durant',
     maintainer_email='martin.durant@utoronto.ca',
     license='BSD',

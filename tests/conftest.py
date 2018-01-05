@@ -2,5 +2,5 @@ import os.path
 
 import pytest
 
-from intake_fastparquet import FastparquetSource
+from intake_parquet import ParquetSource
 
