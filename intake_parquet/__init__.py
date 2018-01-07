@@ -49,17 +49,23 @@ class ParquetSource(base.DataSource):
         if self._pf is None:
             self._pf = fp.ParquetFile(self._urlpath)
         pf = self._pf
+        columns = self._kwargs.get('columns', None)
+        if columns:
+            dtypes = {k: v for k, v in pf.dtypes.items() if k in columns}
+        else:
+            dtypes = pf.dtypes
 
         return base.Schema(datashape=None,
-                           dtype=pf.dtypes,  # one of these is the index
-                           shape=(pf.count, len(pf.columns)),
+                           dtype=dtypes,  # one of these is the index
+                           shape=(pf.count, len(dtypes)),
                            npartitions=len(pf.row_groups),
                            extra_metadata=pf.key_value_metadata)
 
     def _get_partition(self, i):
         pf = self._pf
         index = pf._get_index(self._kwargs.get('index', None))
-        columns = self._kwargs.get('columns', pf.columns)
+        columns = self._kwargs.get('columns', None)
+        columns = columns if columns else pf.columns
         if index and index not in columns:
             columns.append(index)
         rg = pf.row_groups[i]

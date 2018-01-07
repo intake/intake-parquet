@@ -16,15 +16,24 @@ data2 = pf.to_pandas()
                                  [os.path.join(path, 'part.0.parquet'),
                                   os.path.join(path, 'part.1.parquet')],
                                  path2])
-def test_source(url):
-    source = ParquetSource(url)
+@pytest.mark.parametrize('columns', [None,
+                                     ['bhello', 'f', 'i32'],
+                                     ['bhello']])
+def test_source(url, columns):
+    if columns:
+        d = data[columns]
+        d2 = data2[columns]
+    else:
+        d = data
+        d2 = data2
+    source = ParquetSource(url, parquet_kwargs=dict(columns=columns))
     source.discover()
     assert source.npartitions == 2
-    assert source.shape == data2.shape
-    assert source.dtype['i32'] == 'int32'
+    assert source.shape == d2.shape
+    assert source.dtype['bhello'] == 'object'
     part0 = source.read_partition(0)
     assert len(part0) == 1001
-    assert part0.equals(data)
+    assert part0.equals(d)
     it = source.read_chunked()
     assert next(it).equals(part0)
     assert next(it).equals(part0)
@@ -33,4 +42,4 @@ def test_source(url):
     with pytest.raises(IndexError):
         source.read_partition(5)
     parts = source.read()
-    assert parts.equals(data2)
+    assert parts.equals(d2)
