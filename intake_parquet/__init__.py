@@ -52,7 +52,7 @@ class ParquetSource(base.DataSource):
 
         return base.Schema(datashape=None,
                            dtype=pf.dtypes,  # one of these is the index
-                           shape=(len(pf.columns), pf.count),
+                           shape=(pf.count, len(pf.columns)),
                            npartitions=len(pf.row_groups),
                            extra_metadata=pf.key_value_metadata)
 
@@ -69,6 +69,7 @@ class ParquetSource(base.DataSource):
 
     def read(self):
         # More efficient to use `to_pandas` directly.
+        self._load_metadata()
         columns = self._kwargs.get('columns', None)
         index = self._kwargs.get('index', None)
         return self._pf.to_pandas(columns=columns, index=index)
@@ -76,6 +77,7 @@ class ParquetSource(base.DataSource):
     def to_dask(self):
         # More efficient to call dask function directly.
         import dask.dataframe as dd
+        self._load_metadata()
         columns = self._kwargs.get('columns', None)
         index = self._kwargs.get('index', None)
         return dd.read_csv(self._urlpath, columns=columns, index=index)
