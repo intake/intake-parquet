@@ -17,9 +17,29 @@ class Plugin(base.Plugin):
 
 
 class ParquetSource(base.DataSource):
+    """
+    Source to load parquet datasets.
+
+    Produces a dataframe.
+
+    A parquet dataset may be a single file, a set of files in a single
+    directory or a nested set of directories containing data-files.
+
+    Current implementation uses fastparquet: URL should either point to
+    a single file, a directory containing a `_metadata` file, or a list of
+    data files.
+
+    Keyword parameters accepted by this Source:
+    - columns: list of str or None
+        column names to load. If None, loads all
+    - index: str or None
+        column to make into the index of the dataframe. If None, may be
+        inferred from the saved matadata in certain cases.
+    """
+
     def __init__(self, urlpath, parquet_kwargs=None, metadata=None):
         self._urlpath = urlpath
-        self._csv_kwargs = parquet_kwargs or {}
+        self._kwargs = parquet_kwargs or {}
         self._pf = None
 
         super(ParquetSource, self).__init__(container='dataframe',
@@ -31,21 +51,34 @@ class ParquetSource(base.DataSource):
         pf = self._pf
 
         return base.Schema(datashape=None,
-                           dtype=pf.dtypes,
+                           dtype=pf.dtypes,  # one of these is the index
                            shape=(len(pf.columns), pf.count),
                            npartitions=len(pf.row_groups),
                            extra_metadata=pf.key_value_metadata)
 
     def _get_partition(self, i):
         pf = self._pf
-        index = pf._get_index(None)
-        columns = pf.columns
+        index = pf._get_index(self._kwargs.get('index', None))
+        columns = self._kwargs.get('columns', pf.columns)
         if index and index not in columns:
             columns.append(index)
         rg = pf.row_groups[i]
         df, views = pf.pre_allocate(rg.num_rows, columns, None, index)
         pf.read_row_group_file(rg, columns, None, index, assign=views)
         return df
+
+    def read(self):
+        # More efficient to use `to_pandas` directly.
+        columns = self._kwargs.get('columns', None)
+        index = self._kwargs.get('index', None)
+        return self._pf.to_pandas(columns=columns, index=index)
+
+    def to_dask(self):
+        # More efficient to call dask function directly.
+        import dask.dataframe as dd
+        columns = self._kwargs.get('columns', None)
+        index = self._kwargs.get('index', None)
+        return dd.read_csv(self._urlpath, columns=columns, index=index)
 
     def _close(self):
         self._pf = None
