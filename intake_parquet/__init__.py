@@ -86,7 +86,7 @@ class ParquetSource(base.DataSource):
         self._load_metadata()
         columns = self._kwargs.get('columns', None)
         index = self._kwargs.get('index', None)
-        return dd.read_csv(self._urlpath, columns=columns, index=index)
+        return dd.read_parquet(self._urlpath, columns=columns, index=index)
 
     def _close(self):
         self._pf = None
