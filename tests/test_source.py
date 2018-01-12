@@ -2,7 +2,7 @@ import fastparquet
 import os
 import pytest
 
-from intake_parquet import ParquetSource
+from intake_parquet import ParquetSource, Plugin
 
 here = os.path.dirname(__file__)
 path = os.path.join(here, 'test.parq')
@@ -43,3 +43,10 @@ def test_source(url, columns):
         source.read_partition(5)
     parts = source.read()
     assert parts.equals(d2)
+
+
+def test_plugin():
+    p = Plugin()
+    s = p.open(path)
+    out = s.read()
+    assert out.equals(data2)

@@ -5,8 +5,4 @@ sources:
   local:
     driver: parquet
     args:
-      urlpath: !template '{{ CATALOG_DIR }}/local.parq'
-  raw_live:
-    driver: parquet
-    args:
-      urlpath: ~
+      urlpath: !template '{{ CATALOG_DIR }}/test.parq'
