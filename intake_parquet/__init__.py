@@ -1,6 +1,8 @@
 import fastparquet as fp
 from intake.source import base
 
+import dask.dataframe as dd
+
 __version__ = '0.0.1'
 
 
@@ -82,7 +84,6 @@ class ParquetSource(base.DataSource):
 
     def to_dask(self):
         # More efficient to call dask function directly.
-        import dask.dataframe as dd
         self._load_metadata()
         columns = self._kwargs.get('columns', None)
         index = self._kwargs.get('index', None)
