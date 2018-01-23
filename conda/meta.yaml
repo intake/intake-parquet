@@ -19,7 +19,7 @@ requirements:
     - python
     - pandas
     - dask
-    - parquet
+    - fastparquet
 
 test:
   source_files:
@@ -29,7 +29,7 @@ test:
     - pytest-cov
     - coverage
   commands:
-    - py.test --verbose --cov=intake_pcap tests
+    - py.test --verbose --cov=intake_parquet tests
 
 about:
   home: https://github.com/ContinuumIO/intake-parquet
