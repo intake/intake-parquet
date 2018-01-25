@@ -2,6 +2,7 @@ import fastparquet as fp
 from intake.source import base
 
 import dask.dataframe as dd
+from dask.bytes.core import get_fs_token_paths
 
 __version__ = '0.0.1'
 
@@ -42,15 +43,38 @@ class ParquetSource(base.DataSource):
     def __init__(self, urlpath, parquet_kwargs=None, metadata=None):
         self._urlpath = urlpath
         self._kwargs = parquet_kwargs or {}
-        self._pf = None
+        self._pf = None  # for fastparquet loading
+        self._df = None  # for dask loading
 
         super(ParquetSource, self).__init__(container='dataframe',
                                             metadata=metadata)
 
     def _get_schema(self):
         if self._pf is None:
-            self._pf = fp.ParquetFile(self._urlpath)
+            # copied from dask to allow remote
+            soptions = self._kwargs.pop('storage_options', {})
+            fs, fs_token, paths = get_fs_token_paths(
+                self._urlpath, mode='rb', storage_options=soptions)
+
+            if len(paths) > 1:
+                pf = fp.ParquetFile(paths, open_with=fs.open, sep=fs.sep)
+            else:
+                try:
+                    pf = fp.ParquetFile(
+                        paths[0] + fs.sep + '_metadata',
+                        open_with=fs.open,
+                        sep=fs.sep)
+                except Exception:
+                    pf = fp.ParquetFile(paths[0], open_with=fs.open, sep=fs.sep)
+
+            self._pf = pf
         pf = self._pf
+        if self._df is not None:
+            return base.Schema(datashape=None,
+                               dtype=self._df._meta,
+                               shape=(pf.count, len(self._df.columns)),
+                               npartitions=self._df.npartitions,
+                               extra_metadata=pf.key_value_metadata)
         columns = self._kwargs.get('columns', None)
         if columns:
             dtypes = {k: v for k, v in pf.dtypes.items() if k in columns}
@@ -64,6 +88,9 @@ class ParquetSource(base.DataSource):
                            extra_metadata=pf.key_value_metadata)
 
     def _get_partition(self, i):
+        if self._df is not None:
+            # if to_dask has been called
+            return self._df.get_partition.compute()
         pf = self._pf
         index = pf._get_index(self._kwargs.get('index', None))
         columns = self._kwargs.get('columns', None)
@@ -87,7 +114,10 @@ class ParquetSource(base.DataSource):
         self._load_metadata()
         columns = self._kwargs.get('columns', None)
         index = self._kwargs.get('index', None)
-        return dd.read_parquet(self._urlpath, columns=columns, index=index)
+        self._df = dd.read_parquet(self._urlpath, columns=columns, index=index)
+        self._schema = None
+        self.discover()  # resets schema to dask's better version
+        return self._df
 
     def _close(self):
         self._pf = None

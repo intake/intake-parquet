@@ -50,3 +50,23 @@ def test_plugin():
     s = p.open(path)
     out = s.read()
     assert out.equals(data2)
+
+
+def test_discover_after_dask():
+    source = ParquetSource(path)
+    d = source.discover()
+    df = source.to_dask()
+    d2 = source.discover()
+    assert isinstance(d['dtype'], dict)  # maybe should be zero-length df
+    assert set(d['dtype']) == set(df.columns)  # order may not match for dict
+    assert d2['dtype'] is df._meta
+    assert d2['shape'] == d['shape']
+    # dask index starts at 0 for each partition
+    assert df.compute().reset_index(drop=True).equals(source.read())
+
+
+def test_on_s3():
+    s3 = pytest.importorskip('s3fs')
+    s = ParquetSource('s3://MDtemp/gzip-nation.impala.parquet')
+    d = s.read()
+    assert s.shape == (25, 4)
