@@ -50,3 +50,28 @@ def test_plugin():
     s = p.open(path)
     out = s.read()
     assert out.equals(data2)
+
+
+def test_filter():
+    import tempfile
+    import pandas as pd
+    import numpy as np
+    d = str(tempfile.mkdtemp())
+    try:
+        df = pd.DataFrame({'a': np.random.randint(10, size=100),
+                           'b': np.random.choice(['oi', 'hi'], size=100)})
+        df.index.name = 'index'
+        fastparquet.write(d, df, partition_on=['b'], file_scheme='hive',
+                          write_index=True)
+        p = Plugin()
+        s = p.open(d, filters=[('b', '==', 'hi')])
+        disc = s.discover()
+        assert disc['npartitions'] == 1
+        # TODO: this fails because the index appears as a column
+        # assert disc['shape'] == df[df.b == 'hi'].shape
+        out = s.read()
+        assert 'oi' not in out.b
+        assert df[df.b == 'hi'].a.equals(out.a)
+    finally:
+        import shutil
+        shutil.rmtree(d)
