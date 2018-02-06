@@ -56,11 +56,18 @@ class ParquetSource(base.DataSource):
             dtypes = {k: v for k, v in pf.dtypes.items() if k in columns}
         else:
             dtypes = pf.dtypes
+        if 'filters' in self._kwargs:
+            rgs = pf.filter_row_groups(self._kwargs['filters'])
+            parts = len(rgs)
+            count = sum(rg.num_rows for rg in rgs)
+        else:
+            parts = len(pf.row_groups)
+            count = pf.count
 
         return base.Schema(datashape=None,
                            dtype=dtypes,  # one of these is the index
-                           shape=(pf.count, len(dtypes)),
-                           npartitions=len(pf.row_groups),
+                           shape=(count, len(dtypes)),
+                           npartitions=parts,
                            extra_metadata=pf.key_value_metadata)
 
     def _get_partition(self, i):
@@ -80,14 +87,18 @@ class ParquetSource(base.DataSource):
         self._load_metadata()
         columns = self._kwargs.get('columns', None)
         index = self._kwargs.get('index', None)
-        return self._pf.to_pandas(columns=columns, index=index)
+        filters = self._kwargs.get('filters', [])
+        return self._pf.to_pandas(columns=columns, index=index, filters=filters)
 
     def to_dask(self):
         # More efficient to call dask function directly.
         self._load_metadata()
         columns = self._kwargs.get('columns', None)
         index = self._kwargs.get('index', None)
-        return dd.read_parquet(self._urlpath, columns=columns, index=index)
+        filters = self._kwargs.get('filters', [])
+        self._df = dd.read_parquet(self._urlpath, columns=columns, index=index,
+                                   filters=filters)
+        return self._df
 
     def _close(self):
         self._pf = None
