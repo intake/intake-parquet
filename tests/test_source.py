@@ -66,7 +66,32 @@ def test_discover_after_dask():
 
 
 def test_on_s3():
-    s3 = pytest.importorskip('s3fs')
+    pytest.importorskip('s3fs')
     s = ParquetSource('s3://MDtemp/gzip-nation.impala.parquet')
-    d = s.read()
+    s.read()
     assert s.shape == (25, 4)
+
+
+def test_filter():
+    import tempfile
+    import pandas as pd
+    import numpy as np
+    d = str(tempfile.mkdtemp())
+    try:
+        df = pd.DataFrame({'a': np.random.randint(10, size=100),
+                           'b': np.random.choice(['oi', 'hi'], size=100)})
+        df.index.name = 'index'
+        fastparquet.write(d, df, partition_on=['b'], file_scheme='hive',
+                          write_index=True)
+        p = Plugin()
+        s = p.open(d, filters=[('b', '==', 'hi')])
+        disc = s.discover()
+        assert disc['npartitions'] == 1
+        # TODO: this fails because the index appears as a column
+        # assert disc['shape'] == df[df.b == 'hi'].shape
+        out = s.read()
+        assert 'oi' not in out.b
+        assert df[df.b == 'hi'].a.equals(out.a)
+    finally:
+        import shutil
+        shutil.rmtree(d)
