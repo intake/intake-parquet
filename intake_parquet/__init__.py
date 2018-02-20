@@ -8,12 +8,18 @@ __version__ = '0.0.1'
 
 
 class Plugin(base.Plugin):
+    """
+    Intake plugin for reading the parquet format into data-frames
+    """
     def __init__(self):
         super(Plugin, self).__init__(
             name='parquet', version=__version__, container='dataframe',
             partition_access=True)
 
     def open(self, urlpath, **kwargs):
+        """
+        Create a ParquetSource from the given URL and arguments
+        """
         base_kwargs, source_kwargs = self.separate_base_kwargs(kwargs)
         return ParquetSource(urlpath=urlpath, parquet_kwargs=source_kwargs,
                              metadata=base_kwargs['metadata'])
@@ -33,8 +39,10 @@ class ParquetSource(base.DataSource):
     data files.
 
     Keyword parameters accepted by this Source:
+
     - columns: list of str or None
         column names to load. If None, loads all
+
     - index: str or None
         column to make into the index of the dataframe. If None, may be
         inferred from the saved matadata in certain cases.
@@ -110,6 +118,9 @@ class ParquetSource(base.DataSource):
         return df
 
     def read(self):
+        """
+        Create single pandas dataframe from the whole data-set
+        """
         # More efficient to use `to_pandas` directly.
         self._load_metadata()
         columns = self._kwargs.get('columns', None)
@@ -118,6 +129,9 @@ class ParquetSource(base.DataSource):
         return self._pf.to_pandas(columns=columns, index=index, filters=filters)
 
     def to_dask(self):
+        """
+        Create a lazy dask-dataframe from the parquet data
+        """
         # More efficient to call dask function directly.
         self._load_metadata()
         columns = self._kwargs.get('columns', None)
