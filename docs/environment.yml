@@ -1,0 +1,11 @@
+name: intake
+channels:
+  - intake
+  - defaults
+dependencies:
+  - python=3.6
+  - intake
+  - pip:
+    - sphinx
+    - sphinx-rtd-theme
+    - numpydoc
