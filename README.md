@@ -29,7 +29,7 @@ The parquet plugin allows for:
 The conda install instructions are:
 
 ```
-conda install -c intake intake_parquet
+conda install -c intake intake-parquet
 conda install fastparquet
 ```
 
