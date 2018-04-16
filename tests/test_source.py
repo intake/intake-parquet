@@ -2,7 +2,8 @@ import fastparquet
 import os
 import pytest
 
-from intake_parquet import ParquetSource, Plugin
+from intake_parquet import Plugin
+from intake_parquet.source import ParquetSource
 
 here = os.path.dirname(__file__)
 path = os.path.join(here, 'test.parq')

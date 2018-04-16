@@ -2,8 +2,8 @@ plugins:
   source:
     - module: intake_parquet
 sources:
-  - name: test
+  test:
     description: Short example parquet data
     driver: parquet
     args:
-      urlpath: !template '{{ CATALOG_DIR }}/test.parq'
+      urlpath: '{{ CATALOG_DIR }}/test.parq'
