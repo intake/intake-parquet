@@ -1,6 +1,9 @@
 # Intake-parquet
 
-Interface to the parquet binary tabular data format.
+[![Build Status](https://travis-ci.org/ContinuumIO/intake-parquet.svg?branch=master)](https://travis-ci.org/ContinuumIO/intake-parquet)
+[![Documentation Status](https://readthedocs.org/projects/intake-parquet/badge/?version=latest)](http://intake-parquet.readthedocs.io/en/latest/?badge=latest)
+
+[Intake data loader](https://github.com/ContinuumIO/intake/) interface to the parquet binary tabular data format.
 
 Parquet is very popular in the big-data ecosystem, because it provides columnar
 and chunk-wise access to the data, with efficient encodings and compression. This makes
@@ -26,7 +29,7 @@ The parquet plugin allows for:
 The conda install instructions are:
 
 ```
-conda install -c intake intake_parquet
+conda install -c intake intake-parquet
 conda install fastparquet
 ```
 

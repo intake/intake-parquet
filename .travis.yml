@@ -1,14 +1,11 @@
 language: generic
-
 os:
-  - linux
-
+- linux
 env:
   matrix:
   - CONDA_PY=35
   global:
-    secure: KZbjTZeluoWVb6piOBkXXc7EGWzGgi6P3emP4Vg4pNUNPLveY49pQF7vKIqiW7HQJgDpdbYFELJKTOtQAKWFNgWduvcISRvp0MMq4VPwRBimY0akXMYYqMi0KlnVGJJhgiviIXKYmuO71kMElQ6SKu9zxOg3C1tRBhOlLbDVnCTmmBAPSVHYhhYNFUSN8zgSneXeWuLcQ1XVt8eLj9GbMUH6hh0K7NsbUDKK+jpiBpa/phOkndRUifhRIuN1Fd/sQ4Pi4/N8Y5o7nY58AHMPzE3S2LY8ze0qMPNe527cDj2efOx0QvRIROKGveKu9MV5tyzUsto6/XF34GHV22AwRjcVN0mMoVrg5XsuLiNui3JBQST1SgTAr6z221QIz8IZATnFkMSlax1PD0Lu1XOcE1o4g8whGTqw0v5ltszu/Ym0rFu179+Cs3lC8WLBxE/CbqonZEfrYP75UwIQ54N3kJYBH7EHLxvjWktibbJAp/wWD7vCknaw9x3y8W5e6U9qXOA7a13pPASGNIbnbnkfAQ1mkDY0631jukVLbXnGZcNwmuOwdbD0Bry+uQHHFbwApfHoF/kJ3jkT7F4yTvvwhn4qzx7MEDe+go4kj0b+HBD7xi7yt52eRCY+c71L7dhw6CggQ8anCKof+pBN97sG0EJo5Q9KBYzIss7MsKsSXDg=
-
+    secure: ujj1B51Q6iG0f65hMj1bLUNgxHN0rh3dBKkQb3dELJ+OzU8r6YBXjrZp6PS0OM1PGbR5tcLwfmZG8u9QR1NTDAfYlVKXcd86SWqZl3XTQT7IBn7Z0aqV4ILJfpxacSm7Uu7lu9IKAySrDhhi+k4HbUkYk+xEL72e0F2QS07QldmPU3poCxJfpGiavGumiK6JzQ/Pmln+y6SYCtbf/6E4Ub/9jmBJ6XwyXAXS1zaUCbCnaMnLox3WIDaOInSmAa+yUh6E7uWAMOYF3w89ZGa5Q69TXLVZitUDRut1Faouu8RZbAsCdRHtR1CtqciLZiUf0kaWibDXpKoCQcnQIliDGbZIEBa191xOB8joTtb8F2Hz4QhzQ8tBZDa9hxOA/XlGFmBvNh27eMHO2PfJu08s3S/FZGaMjHuGsECvOmVor6lcHPqSE7gmRGUxiH3VQ++agtGw4I8qD83fsKRvnCR+YopViEgtjMAaXHWSNa4AMB4ITFDGx7omnGSpcuVAQ0AmGM8qk8GqhDYzAzMmOmzPYGxFCcvbciFVcwwnsbQ4iMI9XFhCP2Sd1XVzKEGzOMhKDb0JI+3jAb32mlMpcyGhmi+k3smLzgtZTf2vzH0hq5saRrc4z8IzSsxQTPeNkT0s9O7lo8VujI97dBXOC5RdSRohXR8As6AVkSc9bpJYR4I=
 install:
 - |
   echo "Installing a fresh version of Miniconda."
@@ -20,7 +17,6 @@ install:
   echo "Configuring conda."
   source $HOME/miniconda3/bin/activate root
   conda install -y conda-build anaconda-client
-
 script:
 - |
   flake8 .
@@ -33,12 +29,11 @@ script:
 - |
   if [ -n "$TRAVIS_TAG" ]; then
       # If tagged git version, upload package to main channel
-      anaconda -t ${ANACONDA_INTAKE_TOKEN} upload -u intake --force `conda build --output ./conda`
+      anaconda -t ${ANACONDA_TOKEN} upload -u intake --force `conda build --output ./conda`
   else
       # Otherwise upload package to dev channel
-      anaconda -t ${ANACONDA_INTAKE_TOKEN} upload -u intake --label dev --force `conda build --output ./conda`
+      anaconda -t ${ANACONDA_TOKEN} upload -u intake --label dev --force `conda build --output ./conda`
   fi
-
 notifications:
   email: false
   on_success: change
