@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
-
+import versioneer
 
 requires = open('requirements.txt').read().strip().split('\n')
 
 setup(
     name='intake-parquet',
-    version='0.0.1',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description='Intake parquet plugin',
     url='https://github.com/ContinuumIO/intake-parquet',
     maintainer='Martin Durant',

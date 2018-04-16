@@ -1,0 +1,2 @@
+include versioneer.py
+include intake_parquet/_version.py
