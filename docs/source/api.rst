@@ -5,10 +5,10 @@ API Reference
 
 .. autosummary::
    intake_parquet.Plugin
-   intake_parquet.ParquetSource
+   intake_parquet.source.ParquetSource
 
 .. autoclass:: intake_parquet.Plugin
    :members:
 
-.. autoclass:: intake_parquet.ParquetSource
+.. autoclass:: intake_parquet.source.ParquetSource
    :members:
