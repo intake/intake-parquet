@@ -4,10 +4,10 @@ API Reference
 .. currentmodule:: intake_parquet
 
 .. autosummary::
-   intake_parquet.Plugin
+   Plugin
    intake_parquet.source.ParquetSource
 
-.. autoclass:: intake_parquet.Plugin
+.. autoclass:: Plugin
    :members:
 
 .. autoclass:: intake_parquet.source.ParquetSource
