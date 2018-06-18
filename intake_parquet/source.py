@@ -119,10 +119,12 @@ class ParquetSource(base.DataSource):
         index = self._kwargs.get('index', None)
         filters = self._kwargs.get('filters', [])
         self._df = dd.read_parquet(self._urlpath, columns=columns, index=index,
-                                   filters=filters)
+                                   filters=filters,
+                                   storage_options=self._storage_options)
         self._schema = None
         self.discover()  # resets schema to dask's better version
         return self._df
 
     def _close(self):
         self._pf = None
+        self._df = None
