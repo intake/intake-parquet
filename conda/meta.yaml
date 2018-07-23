@@ -16,7 +16,7 @@ requirements:
     - python
     - jinja2
   run:
-    - intake
+    - intake>=0.2
     - python
     - pandas
     - dask

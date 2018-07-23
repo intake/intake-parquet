@@ -33,6 +33,7 @@ class ParquetSource(base.DataSource):
     container = 'dataframe'
     name = 'parquet'
     version = __version__
+    partition_access = True
 
     def __init__(self, urlpath, metadata=None,
                  storage_options=None, **parquet_kwargs):
