@@ -61,13 +61,8 @@ A source so defined will provide the usual methods such as ``discover`` and ``re
 Creating Catalog Entries
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-To include in a catalog, the plugin must be listed in the plugins of the catalog::
-
-   plugins:
-     source:
-       - module: intake_parquet
-
-and entries must specify ``driver: parquet``. The further arguments are exactly the same
+To include in a catalog, entries must specify ``driver: parquet``.
+The further arguments are exactly the same
 as for ``open_parquet``. Commonly, the choice of which columns to load can be left to the
 end-user, by including it as a parameter.
 
@@ -78,7 +73,7 @@ Assuming a catalog file called ``cat.yaml``, containing a parquet source ``pdata
 load it into a dataframe as follows::
 
    import intake
-   cat = intake.Catalog('cat.yaml')
+   cat = intake.open_catalog('cat.yaml')
    df = cat.pdata.read()
 
 Parquet data-sets are inherently partitioned, and the partitions can be accessed in random order

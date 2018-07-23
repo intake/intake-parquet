@@ -1,8 +1,5 @@
-import fastparquet as fp
 from intake.source import base
-
-import dask.dataframe as dd
-from dask.bytes.core import get_fs_token_paths
+from . import __version__
 
 
 class ParquetSource(base.DataSource):
@@ -26,20 +23,31 @@ class ParquetSource(base.DataSource):
     - index: str or None
         column to make into the index of the dataframe. If None, may be
         inferred from the saved matadata in certain cases.
-    """
 
-    def __init__(self, urlpath, parquet_kwargs=None, metadata=None,
-                 storage_options=None):
+    - filters: list of tuples
+        row-group level filtering; a tuple like ``('x', '>', 1)`` would mean
+        that if a row-group has a maximum value less than 1 for the column
+        ``x``, then it will be skipped. Row-level filtering is *not*
+        performed.
+    """
+    container = 'dataframe'
+    name = 'parquet'
+    version = __version__
+    partition_access = True
+
+    def __init__(self, urlpath, metadata=None,
+                 storage_options=None, **parquet_kwargs):
         self._urlpath = urlpath
         self._storage_options = storage_options or {}
         self._kwargs = parquet_kwargs or {}
         self._pf = None  # for fastparquet loading
         self._df = None  # for dask loading
 
-        super(ParquetSource, self).__init__(container='dataframe',
-                                            metadata=metadata)
+        super(ParquetSource, self).__init__(metadata=metadata)
 
     def _get_schema(self):
+        import fastparquet as fp
+        from dask.bytes.core import get_fs_token_paths
         if self._pf is None:
             # copied from dask to allow remote
             fs, fs_token, paths = get_fs_token_paths(
@@ -59,8 +67,9 @@ class ParquetSource(base.DataSource):
             self._pf = pf
         pf = self._pf
         if self._df is not None:
+            dtypes = {k: str(v) for k, v in self._df._meta.dtypes.items()}
             return base.Schema(datashape=None,
-                               dtype=self._df._meta,
+                               dtype=dtypes,
                                shape=(pf.count, len(self._df.columns)),
                                npartitions=self._df.npartitions,
                                extra_metadata=pf.key_value_metadata)
@@ -69,6 +78,7 @@ class ParquetSource(base.DataSource):
             dtypes = {k: v for k, v in pf.dtypes.items() if k in columns}
         else:
             dtypes = pf.dtypes
+        dtypes = {k: str(v) for k, v in dtypes.items()}
         if 'filters' in self._kwargs:
             rgs = pf.filter_row_groups(self._kwargs['filters'])
             parts = len(rgs)
@@ -113,6 +123,7 @@ class ParquetSource(base.DataSource):
         """
         Create a lazy dask-dataframe from the parquet data
         """
+        import dask.dataframe as dd
         # More efficient to call dask function directly.
         self._load_metadata()
         columns = self._kwargs.get('columns', None)

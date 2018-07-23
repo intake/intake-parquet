@@ -1,8 +1,9 @@
 import fastparquet
+import msgpack
 import os
+import pickle
 import pytest
 
-from intake_parquet import Plugin
 from intake_parquet.source import ParquetSource
 
 here = os.path.dirname(__file__)
@@ -27,7 +28,7 @@ def test_source(url, columns):
     else:
         d = data
         d2 = data2
-    source = ParquetSource(url, parquet_kwargs=dict(columns=columns))
+    source = ParquetSource(url, columns=columns)
     source.discover()
     assert source.npartitions == 2
     assert source.shape == d2.shape
@@ -46,13 +47,6 @@ def test_source(url, columns):
     assert parts.equals(d2)
 
 
-def test_plugin():
-    p = Plugin()
-    s = p.open(path)
-    out = s.read()
-    assert out.equals(data2)
-
-
 def test_discover_after_dask():
     source = ParquetSource(path)
     d = source.discover()
@@ -60,10 +54,23 @@ def test_discover_after_dask():
     d2 = source.discover()
     assert isinstance(d['dtype'], dict)  # maybe should be zero-length df
     assert set(d['dtype']) == set(df.columns)  # order may not match for dict
-    assert d2['dtype'] is df._meta
+    assert d2['dtype'] == d['dtype']
     assert d2['shape'] == d['shape']
     # dask index starts at 0 for each partition
     assert df.compute().reset_index(drop=True).equals(source.read())
+
+
+def test_discover_serialize():
+    source = ParquetSource(path)
+    assert msgpack.packb(source.discover())
+
+
+def test_pickle():
+    source = ParquetSource(path)
+    d = source.read()
+    source2 = pickle.loads(pickle.dumps(source))
+    d2 = source2.read()
+    assert d.equals(d2)
 
 
 def test_on_s3():
@@ -84,8 +91,7 @@ def test_filter():
         df.index.name = 'index'
         fastparquet.write(d, df, partition_on=['b'], file_scheme='hive',
                           write_index=True)
-        p = Plugin()
-        s = p.open(d, filters=[('b', '==', 'hi')])
+        s = ParquetSource(d, filters=[('b', '==', 'hi')])
         disc = s.discover()
         assert disc['npartitions'] == 1
         # TODO: this fails because the index appears as a column
