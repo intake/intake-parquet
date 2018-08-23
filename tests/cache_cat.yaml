@@ -1,0 +1,10 @@
+sources:
+  split:
+    driver: parquet
+    args:
+      urlpath: '{{ CATALOG_DIR }}/split'
+    cache:
+      - type: dir
+        regex: '{{ CATALOG_DIR }}/split'
+        argkey: urlpath
+        depth: 4
