@@ -83,3 +83,21 @@ Parquet data also plays well with Dask parallel processing, so the method ``to_d
 be considered. Importantly, sub-selecting from the columns of the Dask data-frame will prevent
 unnecessary loading of the non-required columns even in the case where columns selection has
 not been included in the catalog entry user parameters.
+
+Caching
+~~~~~~~
+
+Parquet data-sets can be singular, lists of files, or whole directory trees. The first two can
+be cached using the standard "files" type cache, but the latter requires "dir" type cachimg to
+capture the whole structure. An example may look like:
+
+.. code-block:: yaml
+
+    cache:
+      - type: dir
+        regex: '{{ CATALOG_DIR }}/split'
+        argkey: urlpath
+        depth: 4
+
+Where the extra ``depth`` parameter indicates the number of directory levels that should be
+scanned.
