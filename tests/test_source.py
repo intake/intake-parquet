@@ -1,11 +1,15 @@
 import fastparquet
+import glob
 import msgpack
 import os
 import pickle
 import pytest
+import shutil
 
 from intake_parquet.source import ParquetSource
+import intake
 
+intake.registry['parquet'] = ParquetSource  # because pytest defers import
 here = os.path.dirname(__file__)
 path = os.path.join(here, 'test.parq')
 path2 = os.path.join(here, 'test2.parq')
@@ -102,3 +106,24 @@ def test_filter():
     finally:
         import shutil
         shutil.rmtree(d)
+
+
+def test_with_cache():
+    import tempfile
+    d = tempfile.mkdtemp()
+    old = intake.config.conf['cache_dir']
+    expected = fastparquet.ParquetFile(os.path.join(here, 'split')).to_pandas()
+    try:
+        intake.config.conf['cache_dir'] = d
+        cat = intake.open_catalog(os.path.join(here, 'cache_cat.yaml'))
+        s = cat.split()
+        assert isinstance(s.cache[0], intake.source.cache.DirCache)
+        outfiles = s.cache[0].load(s._urlpath, output=False)
+        assert outfiles
+        assert outfiles[0].startswith(s.cache_dirs[0])
+        loc = s.cache[0]._path(s._urlpath)
+        assert glob.glob(loc + '/*/*/*.parquet')
+        assert s.read().equals(expected)
+    finally:
+        shutil.rmtree(d)
+        intake.config.conf['cache_dir'] = old

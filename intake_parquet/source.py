@@ -48,10 +48,11 @@ class ParquetSource(base.DataSource):
     def _get_schema(self):
         import fastparquet as fp
         from dask.bytes.core import get_fs_token_paths
+        urlpath, *_ = self._get_cache(self._urlpath)
         if self._pf is None:
             # copied from dask to allow remote
             fs, fs_token, paths = get_fs_token_paths(
-                self._urlpath, mode='rb', storage_options=self._storage_options)
+                urlpath, mode='rb', storage_options=self._storage_options)
 
             if len(paths) > 1:
                 pf = fp.ParquetFile(paths, open_with=fs.open, sep=fs.sep)
@@ -124,12 +125,13 @@ class ParquetSource(base.DataSource):
         Create a lazy dask-dataframe from the parquet data
         """
         import dask.dataframe as dd
+        urlpath, *_ = self._get_cache(self._urlpath)
         # More efficient to call dask function directly.
         self._load_metadata()
         columns = self._kwargs.get('columns', None)
         index = self._kwargs.get('index', None)
         filters = self._kwargs.get('filters', [])
-        self._df = dd.read_parquet(self._urlpath, columns=columns, index=index,
+        self._df = dd.read_parquet(urlpath, columns=columns, index=index,
                                    filters=filters,
                                    storage_options=self._storage_options)
         self._schema = None
