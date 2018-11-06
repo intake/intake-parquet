@@ -21,6 +21,7 @@ requirements:
     - pandas
     - dask
     - fastparquet
+    - pyarrow
 
 test:
   source_files:
