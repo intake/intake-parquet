@@ -68,6 +68,24 @@ class ParquetSource(base.DataSource):
         self._load_metadata()
         return self._df.compute()
 
+    def to_spark(self):
+        """Produce Spark DataFrame equivalent
+
+        This will ignore all arguments except the urlpath, which will be
+        directly interpreted by Spark. If you need to configure the storage,
+        that must be done on the spark side.
+
+        This method requires intake-spark. See its documentation for how to
+        set up a spark Session.
+        """
+        from intake_spark.base import SparkHolder
+        args = [
+            ['read'],
+            ['parquet', [self._urlpath]]
+        ]
+        sh = SparkHolder(True, args, {})
+        return sh.setup()
+
     def to_dask(self):
         self._load_metadata()
         return self._df
