@@ -35,20 +35,20 @@ def test_source(url, columns):
     source = ParquetSource(url, columns=columns)
     source.discover()
     assert source.npartitions == 2
-    assert source.shape == d2.shape
+    assert source.shape == (None, len(d2.columns))
     assert source.dtype['bhello'] == 'object'
     part0 = source.read_partition(0)
     assert len(part0) == 1001
-    assert part0.equals(d)
+    assert part0.reset_index(drop=True).equals(d)
     it = source.read_chunked()
-    assert next(it).equals(part0)
-    assert next(it).equals(part0)
+    assert next(it).reset_index(drop=True).equals(part0)
+    assert next(it).reset_index(drop=True).equals(part0)
     with pytest.raises(StopIteration):
         next(it)
     with pytest.raises(IndexError):
         source.read_partition(5)
     parts = source.read()
-    assert parts.equals(d2)
+    assert parts.reset_index(drop=True).equals(d2)
 
 
 def test_discover_after_dask():
@@ -61,7 +61,8 @@ def test_discover_after_dask():
     assert d2['dtype'] == d['dtype']
     assert d2['shape'] == d['shape']
     # dask index starts at 0 for each partition
-    assert df.compute().reset_index(drop=True).equals(source.read())
+    assert df.compute().reset_index(drop=True).equals(
+        source.read().reset_index(drop=True))
 
 
 def test_discover_serialize():
@@ -81,7 +82,7 @@ def test_on_s3():
     pytest.importorskip('s3fs')
     s = ParquetSource('s3://MDtemp/gzip-nation.impala.parquet')
     s.read()
-    assert s.shape == (25, 4)
+    assert s.shape == (None, 4)
 
 
 def test_filter():
@@ -123,7 +124,7 @@ def test_with_cache():
         assert outfiles[0].startswith(s.cache_dirs[0])
         loc = s.cache[0]._path(s._urlpath)
         assert glob.glob(loc + '/*/*/*.parquet')
-        assert s.read().equals(expected)
+        assert s.read().reset_index(drop=True).equals(expected)
     finally:
         shutil.rmtree(d)
         intake.config.conf['cache_dir'] = old
