@@ -11,7 +11,7 @@ Installation
 
 To use this plugin for `intake`_, install with the following command::
 
-   conda install -c intake intake-parquet
+   conda install -c conda-forge intake-parquet
 
 .. _intake: https://github.com/ContinuumIO/intake
 
