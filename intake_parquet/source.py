@@ -130,8 +130,8 @@ class ParquetSource(base.DataSource):
         import json
         import fastparquet as fp
 
-        frame = self._df or self.to_dask()
-        urlpath =  self._get_cache(self._urlpath)[0]
+        frame = self.to_dask()
+        urlpath = self._get_cache(self._urlpath)[0]
         pf = fp.ParquetFile(urlpath)
         # Check for spatial points metadata
         if 'SpatialPointsFrame' in pf.key_value_metadata:
