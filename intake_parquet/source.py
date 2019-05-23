@@ -107,8 +107,19 @@ class ParquetSource(base.DataSource):
         return self._df
 
     def to_spatial(self):
-        """
-        Create a datashader spatial object from the parquet data
+        """Read a data source as a SpatialPointsFrame.
+
+        This requires that the data be structured in a particular, spatially
+        optimized, way. To convert a regular dataframe to a SpatialPointsFrame
+        use the functionality in datshader.
+
+        >>> import datashader.spatial.points as dsp
+        >>> dsp.to_parquet(df, 'sorted.parq', 'x', 'y', shuffle='disk', npartitions=32)
+
+        More info at http://datashader.org/user_guide/2_Points.html
+
+        This whole function is copied from datashader.
+        https://github.com/pyviz/datashader/blob/815596bbf72017c6b8014cfc96354601a3529b04/datashader/spatial/points.py#L297-L312
         """
         try:
             from datashader.spatial.points import SpatialPointsFrame

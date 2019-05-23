@@ -21,6 +21,9 @@ script:
 - |
   flake8 .
   conda build -c intake -c defaults -c conda-forge ./conda
+- conda install -y  -c conda-forge 'datashader==0.7.0'
+- conda install -y --use-local intake
+- py.test --verbose --cov=intake_parquet tests
 - |
   if [ -n "$TRAVIS_TAG" ]; then
       # If tagged git version, upload package to main channel

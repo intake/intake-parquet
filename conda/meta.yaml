@@ -30,7 +30,6 @@ test:
     - pytest
     - pytest-cov
     - coverage
-    - datashader==0.7.0
   commands:
     - py.test --verbose --cov=intake_parquet tests
 
