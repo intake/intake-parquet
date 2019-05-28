@@ -118,31 +118,17 @@ class ParquetSource(base.DataSource):
 
         More info at http://datashader.org/user_guide/2_Points.html
 
-        This whole function is copied from datashader.
-        https://github.com/pyviz/datashader/blob/815596bbf72017c6b8014cfc96354601a3529b04/datashader/spatial/points.py#L297-L312
+        NOTE: This method only works for local or cached data.
         """
         try:
-            from datashader.spatial.points import SpatialPointsFrame
+            from datashader.spatial import read_parquet
         except ImportError:
             raise ImportError('SpatialPointsFrame not found in this '
                 'version of datashader. Get latest using '
                 '`conda install -c pyviz datashader`.')
-        import json
-        import fastparquet as fp
 
-        frame = self.to_dask()
         urlpath = self._get_cache(self._urlpath)[0]
-        pf = fp.ParquetFile(urlpath)
-        # Check for spatial points metadata
-        if 'SpatialPointsFrame' in pf.key_value_metadata:
-            # Load metadata
-            props = json.loads(pf.key_value_metadata['SpatialPointsFrame'])
-        else:
-            props = None
-
-        # Call DataFrame constructor with the internals of frame
-        return SpatialPointsFrame(frame.dask, frame._name, frame._meta,
-                                  frame.divisions, props)
+        return read_parquet(urlpath)
 
     def _close(self):
         self._df = None
