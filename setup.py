@@ -16,6 +16,8 @@ setup(
     license='BSD',
     packages=find_packages(),
     # package_data={'': ['*.pcap', '*.yml', '*.html']},
+    entry_points={
+        'intake.drivers': ['parquet = intake_parquet.source:ParquetSource']},
     include_package_data=True,
     install_requires=requires,
     long_description=open('README.md').read(),
