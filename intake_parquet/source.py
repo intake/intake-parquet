@@ -31,6 +31,13 @@ class ParquetSource(base.DataSource):
 
     - engine: 'fastparquet' or 'pyarrow'
         Which backend to read with.
+
+
+    - gather_statistics : bool or None (default).
+        Gather the statistics for each dataset partition. By default,
+        this will only be done if the _metadata file is available. Otherwise,
+        statistics will only be gathered if True, because the footer of
+        every file will be parsed (which is very slow on some systems).
     """
     container = 'dataframe'
     name = 'parquet'
@@ -98,7 +105,8 @@ class ParquetSource(base.DataSource):
         urlpath = self._get_cache(self._urlpath)[0]
         kw = dict(columns=self._kwargs.get('columns', None),
                   index=self._kwargs.get('index', None),
-                  engine=self._kwargs.get('engine', 'auto'))
+                  engine=self._kwargs.get('engine', 'auto'),
+                  gather_statistics=self._kwargs.get('gather_statistics', None))
         if 'filters' in self._kwargs:
             kw['filters'] = self._kwargs['filters']
         self._df = dd.read_parquet(urlpath,
