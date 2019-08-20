@@ -62,6 +62,16 @@ Arguments to ``open_parquet``:
   because the footer of every file will be parsed (which is very slow on some
   systems).
 
+- ``engine`` : 'fastparquet' or 'pyarrow'. Which backend to read with.
+
+- ``gather_statistics`` : bool or None (default).  Gather the statistics for
+  each dataset partition. By default, this will only be done if the _metadata
+  file is available. Otherwise, statistics will only be gathered if True,
+  because the footer of every file will be parsed (which is very slow on some
+  systems).
+
+- see ``dd.read_parquet()`` for the other named parameters that can be passed through.
+
 .. _documentation : http://dask.pydata.org/en/latest/remote-data-services.html
 
 A source so defined will provide the usual methods such as ``discover`` and ``read_partition``.
