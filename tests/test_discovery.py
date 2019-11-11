@@ -8,4 +8,5 @@ def test_discovery():
     # For awhile we expect a PendingDeprecationWarning due to
     # do_pacakge_scan=True. But we should *not* get a FutureWarning.
     for record in record.list:
-        assert not isinstance(record.message, FutureWarning)
+        if isinstance(record.message, FutureWarning):
+            assert "parquet" not in str(record.message)
