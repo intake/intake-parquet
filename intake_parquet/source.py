@@ -11,8 +11,8 @@ class ParquetSource(base.DataSource):
     A parquet dataset may be a single file, a set of files in a single
     directory or a nested set of directories containing data-files.
 
-    The implementation uses either fastparquet or pyarrow, select with the
-    `engine=` kwarg.
+    The implementation uses either fastparquet, pyarrow or cudf, select with
+    the `engine=` kwarg.
 
     Keyword parameters accepted by this Source:
 
@@ -29,9 +29,8 @@ class ParquetSource(base.DataSource):
         ``x``, then it will be skipped. Row-level filtering is *not*
         performed.
 
-    - engine: 'fastparquet' or 'pyarrow'
+    - engine: 'fastparquet', 'pyarrow' or 'cudf'
         Which backend to read with.
-
 
     - gather_statistics : bool or None (default).
         Gather the statistics for each dataset partition. By default,
@@ -108,6 +107,15 @@ class ParquetSource(base.DataSource):
         self._df = dd.read_parquet(urlpath,
                                    storage_options=self._storage_options, **self._kwargs)
         self._load_metadata()
+        return self._df
+
+    def to_cudf(self):
+        """
+        Load a Parquet dataset into a GPU-backed cudf.DataFrame
+        """
+        import cudf
+
+        self._df = cudf.read_parquet(filepath_or_buffer=self._urlpath, **self._kwargs)
         return self._df
 
     def _close(self):
