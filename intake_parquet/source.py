@@ -1,4 +1,8 @@
+from typing import Dict, List
+
 from intake.source import base
+
+from intake_parquet.s3_helpers.s3helpers import validate_path
 from . import __version__
 
 
@@ -70,7 +74,7 @@ class ParquetSource(base.DataSource):
         self._get_schema()
         return self._df.get_partition(i).compute()
 
-    def read(self):
+    def _read(self):
         """
         Create single pandas dataframe from the whole data-set
         """
@@ -109,6 +113,32 @@ class ParquetSource(base.DataSource):
                                    storage_options=self._storage_options, **self._kwargs)
         self._load_metadata()
         return self._df
+
+    def _to_partitions(self, partitions: Dict[str, str]):
+        """
+        Navigate a hierarchy of named partitions in a path
+        in preparation for a read
+
+        :param partitions: Dict of partition name:value's
+        :return: self
+
+        """
+        valid, parquet_path = validate_path(self._urlpath, partitions)
+        if not valid:
+            raise RuntimeError(f"Could not find a valid path for provided partitions {partitions}")
+        self._urlpath = parquet_path
+        return self
+
+    def read(self, partitions: Dict[str, str] = None):
+        """
+
+        :param partitions:
+        :return:
+        """
+        if partitions is None:
+            return self._read()
+        else:
+            return self._to_partitions(partitions=partitions).read()
 
     def _close(self):
         self._df = None
