@@ -14,7 +14,7 @@ setup(
     maintainer='Martin Durant',
     maintainer_email='martin.durant@utoronto.ca',
     license='BSD',
-    packages=find_packages(),
+    packages=find_packages(exclude=['tests']),
     # package_data={'': ['*.pcap', '*.yml', '*.html']},
     entry_points={
         'intake.drivers': ['parquet = intake_parquet.source:ParquetSource']},
