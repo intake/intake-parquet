@@ -128,3 +128,10 @@ def test_with_cache():
     finally:
         shutil.rmtree(d)
         intake.config.conf['cache_dir'] = old
+
+def test_to_cudf():
+    cudf = pytest.importorskip("cudf")
+    source = ParquetSource(path2)
+    df = source.to_cudf()
+    assert df.shape == (2002, 7)
+    assert isinstance(df, cudf.DataFrame)
