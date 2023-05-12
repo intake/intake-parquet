@@ -1,4 +1,6 @@
+import fsspec
 from intake.source import base
+
 from . import __version__
 
 
@@ -14,14 +16,10 @@ class ParquetSource(base.DataSource):
     The implementation uses either fastparquet or pyarrow, select with the
     `engine=` kwarg.
 
-    Keyword parameters accepted by this Source:
+    Common keyword parameters accepted by this Source:
 
     - columns: list of str or None
         column names to load. If None, loads all
-
-    - index: str or None
-        column to make into the index of the dataframe. If None, may be
-        inferred from the saved matadata in certain cases.
 
     - filters: list of tuples
         row-group level filtering; a tuple like ``('x', '>', 1)`` would mean
@@ -32,14 +30,8 @@ class ParquetSource(base.DataSource):
     - engine: 'fastparquet' or 'pyarrow'
         Which backend to read with.
 
-
-    - gather_statistics : bool or None (default).
-        Gather the statistics for each dataset partition. By default,
-        this will only be done if the _metadata file is available. Otherwise,
-        statistics will only be gathered if True, because the footer of
-        every file will be parsed (which is very slow on some systems).
-
-    - see dd.read_parquet() for the other named parameters that can be passed through.
+    - see pd.read_parquet and dd.read_parquet() for the other named parameters that
+      can be passed through.
     """
     container = 'dataframe'
     name = 'parquet'
@@ -57,25 +49,40 @@ class ParquetSource(base.DataSource):
 
     def _get_schema(self):
         if self._df is None:
-            self._df = self._to_dask()
-        dtypes = {k: str(v) for k, v in self._df._meta.dtypes.items()}
-        self._schema = base.Schema(datashape=None,
-                                   dtype=dtypes,
-                                   shape=(None, len(self._df.columns)),
-                                   npartitions=self._df.npartitions,
-                                   extra_metadata={})
-        return self._schema
+            engine = self._kwargs.get("engine", "fastparquet")
+            fs, _, _ = fsspec.core.get_fs_token_paths(self._urlpath, **self._storage_options)
+            if engine == "fastparquet":
+                import fastparquet
+                pf = fastparquet.ParquetFile(self._urlpath, fs=fs)
+                lc = len(self._kwargs.get("columns") or []) or len(pf.columns)
+                dt = {k: str(v) for k, v in pf.dtypes.items()}
+                schema = base.Schema(dtype=dt, shape=(pf.count(), lc),
+                                npartitions=len(pf.row_groups), extra_metadata=pf.key_value_metadata)
+            else:
+                import pyarrow.parquet as pq
+                pf = pq.ParquetDataset(self._urlpath, filesystem=fs)
+                lc = len(self._kwargs.get("columns") or []) or len(pf.schema)
+                dt = {k: str(v) for k, v in zip(pf.schema.names, pf.schema.types)}
+                schema = base.Schema(dtype=dt, shape=(None, lc),
+                                npartitions=len(pf.fragments))
+        else:
+            npartitions = getattr(self._df, "npartitions", None)
+            schema = base.Schema(dtype=self._df.dtypes, shape=self._df.shape,
+                            npartitions=npartitions)
+        return schema
 
     def _get_partition(self, i):
-        self._get_schema()
-        return self._df.get_partition(i).compute()
+        return self.to_dask().get_partition(i).compute()
 
     def read(self):
         """
         Create single pandas dataframe from the whole data-set
         """
-        self._load_metadata()
-        return self._df.compute()
+        import pandas as pd
+        df = pd.read_parquet(self._urlpath, storage_options=self._storage_options,
+                             **self._kwargs)
+        self._df = df.iloc[:0]
+        return df
 
     def to_spark(self):
         """Produce Spark DataFrame equivalent
@@ -96,18 +103,10 @@ class ParquetSource(base.DataSource):
         return sh.setup()
 
     def to_dask(self):
-        self._load_metadata()
-        return self._df
-
-    def _to_dask(self):
-        """
-        Create a lazy dask-dataframe from the parquet data
-        """
         import dask.dataframe as dd
-        urlpath = self._get_cache(self._urlpath)[0]
-        self._df = dd.read_parquet(urlpath,
-                                   storage_options=self._storage_options, **self._kwargs)
-        self._load_metadata()
+        df = dd.read_parquet(self._urlpath, storage_options=self._storage_options,
+                             **self._kwargs)
+        self._df = df
         return self._df
 
     def _close(self):
