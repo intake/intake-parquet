@@ -50,7 +50,7 @@ class ParquetSource(base.DataSource):
     def _get_schema(self):
         if self._df is None:
             engine = self._kwargs.get("engine", "fastparquet")
-            fs, _, _ = fsspec.core.get_fs_token_paths(self._urlpath, **self._storage_options)
+            fs, _, _ = fsspec.core.get_fs_token_paths(self._urlpath, storage_options=self._storage_options)
             if engine == "fastparquet":
                 import fastparquet
                 pf = fastparquet.ParquetFile(self._urlpath, fs=fs)
